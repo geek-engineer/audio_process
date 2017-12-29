@@ -1,0 +1,35 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules
+*.swp
+*.o
+*.scc
+*.bak
+tags
+.gradle/
+.gradletasknamecache
+.ycm_extra_conf.*
+.clang_complete
+.gcc-flags.json
+*.gch
+.syntastic_c_config
+.vscode
+GPATH
+GRTAGS
+GTAGS
+Debug/
+build/
+test/
+test_config/
+bluetooth/
+tools
+**/version.c
+*.exe
+*.wav
