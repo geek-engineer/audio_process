@@ -50,9 +50,9 @@ void LPF_destroy( LPFType *pObject )
 
 	LPF_filterBiquad( &executionState );		// Run biquad #0
 	executionState.pInput = executionState.pOutput;         // The remaining biquads will now re-use the same output buffer.
-
 	LPF_filterBiquad( &executionState );		// Run biquad #1
 	executionState.pInput = executionState.pOutput;
+
 	executionState.pCoefficients = LPF_quarter_coefficients;
 	LPF_filterBiquad( &executionState );		// Run biquad #2
 	executionState.pInput = executionState.pOutput;
@@ -114,24 +114,24 @@ void LPF_destroy( LPFType *pObject )
 
 }
 
- int LPF_filterInChunks( LPFType * pThis, int16_t * pInput, int16_t * pOutput, uint32_t length )
-{
- 	int processedLength = 0;
-	uint32_t chunkLength, outLength;
+// int LPF_filterInChunks( LPFType * pThis, int16_t * pInput, int16_t * pOutput, uint32_t length )
+//{
+// 	int processedLength = 0;
+//	uint32_t chunkLength, outLength;
 //	static long random = 0x6428734; // Use pseudo-random number generator to split input into small random length chunks.
-	while( length > 0)
-	{
-		chunkLength = length;//random & 0xf;											// Choose random chunkLength from 0 - 15
-		if( chunkLength > length ) chunkLength = length;					// Limit chunk length to the number of remaining samples
-		outLength = LPF_filterBlock( pThis,  pInput, pOutput, chunkLength );		// Filter the block and determine the number of returned samples
-		pOutput += outLength;												// Update the output pointer
-		processedLength += outLength;										// Update the total number of samples output
-		pInput += chunkLength;												// Update the input pointer
-		length -= chunkLength;												// Update the number of samples remaining
+//	while( length > 0)
+//	{
+//		chunkLength = random & 0xf;											// Choose random chunkLength from 0 - 15
+//		if( chunkLength > length ) chunkLength = length;					// Limit chunk length to the number of remaining samples
+//		outLength = LPF_filterBlock( pThis,  pInput, pOutput, chunkLength );		// Filter the block and determine the number of returned samples
+//		pOutput += outLength;												// Update the output pointer
+//		processedLength += outLength;										// Update the total number of samples output
+//		pInput += chunkLength;												// Update the input pointer
+//		length -= chunkLength;												// Update the number of samples remaining
 //		random = random + 0x834f4527;										// Cycle the simple random number generator
-	}
-	return processedLength;													// Return the number of samples processed
-
-}
+//	}
+//	return processedLength;													// Return the number of samples processed
+//
+//}
 
 

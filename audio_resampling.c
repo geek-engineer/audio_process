@@ -15,7 +15,7 @@ int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 {
 	uint32_t samplesProcessed, i, j, frame_size;
 	int16_t *filtered_dat;
-	i = j= 0;
+	frame_size = 1024;
 
 	//allocate buffer for filtered data
 	filtered_dat = malloc(length*sizeof(int16_t));
@@ -23,9 +23,16 @@ int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 	//lowpass filter
 	LPFType *filter = LPF_create(); // Create an instance of the filter
 	LPF_reset( filter );
-	while(length > 0) {
-		samplesProcessed = LPF_filterBlock( filter, in_data, filtered_dat, length);		// Filter the input test signal
+	i = 0;
+	j = length;
+	while(j > 0) {
+		if(frame_size > j) frame_size = j;
+		samplesProcessed = LPF_filterBlock( filter, in_data + i, filtered_dat + i, frame_size);		// Filter the input test signal
+		i += frame_size;
+		j -= frame_size;
 	}
+	
+	i = j= 0;
 	while(i < length) {
 		if((i%2) == 0) {
 				out_data[j] = filtered_dat[i];
@@ -56,10 +63,18 @@ int up_double_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 		i++;
 	}
 
+	//lowpass filter
+	int frame_size;
 	LPFType *filter = LPF_create(); // Create an instance of the filter
 	LPF_reset( filter );
-	samplesProcessed = LPF_filterInChunks( filter, double_dat, out_data, 2 * length);		// Filter the input test signal
-
+	i = 0;
+	j = length * 2;
+	while(j > 0) {
+		if(frame_size > j) frame_size = j;
+		samplesProcessed = LPF_filterBlock( filter, double_dat + i, out_data + i, frame_size);		// Filter the input test signal
+		i += frame_size;
+		j -= frame_size;
+	}
 
 	LPF_destroy(filter);
 	free(double_dat);
@@ -67,6 +82,8 @@ int up_double_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 	return samplesProcessed;
 
 }
+
+
 int main(int argc, char *argv[])
 {
 	FILE *fd_in, *fd_out;
@@ -77,22 +94,12 @@ int main(int argc, char *argv[])
 	char file[50];
 	sprintf(file,"%s",argv[1]);
 
-	/*-------------here is test code------------------*/
-	 long            ms; // Milliseconds
-    time_t          s;  // Seconds
-    struct timespec spec;
-
-    clock_gettime(CLOCK_REALTIME, &spec);
-
-    s  = spec.tv_sec;
-	printf("nano second:%d",spec.tv_nsec);
-
-	/*---------------end of test----------------------*/
 	fd_in = fopen(file, "r");
 	if(!fd_in) {
 		printf("file open fail!");
 		return 0;
 	}
+
 	//wav pcm header
 	//	i = 0;
 	//	for(i = 0; i < 44; i++) {
@@ -137,6 +144,10 @@ int main(int argc, char *argv[])
 	char file_up_out[50];
 	sprintf(file_up_out,"up_%s",file);
 	f_up = fopen(file_up_out, "w");
+	if(!f_up) {
+		printf("file open fail!");
+		return 0;
+	}
 	i = 0;
 	i = 20; //drop the first 20 data avoid noise
 	while(i < audio_len)
