@@ -1,6 +1,6 @@
 #ifndef LPF_H_ // Include guards
 #define LPF_H_
-#include <stdio.h>
+#include <stdint.h>
 static const int LPF_numStages = 2;
 static const int LPF_coefficientLength = 10;
 extern int16_t LPF_coefficients[10];
