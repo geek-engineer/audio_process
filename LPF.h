@@ -1,15 +1,22 @@
 #ifndef LPF_H_ // Include guards
 #define LPF_H_
-#include <stdio.h>
+#include <stdint.h>
 static const int LPF_numStages = 2;
 static const int LPF_coefficientLength = 10;
 extern int16_t LPF_coefficients[10];
 
 typedef struct
 {
-	int16_t state[8];
+	int16_t state[20];
+	int8_t nb_channel;
 	int16_t output;
 } LPFType;
+
+typedef enum
+{
+	mono,
+	stereo
+} audio_channel;
 
 typedef struct
 {
@@ -17,6 +24,7 @@ typedef struct
 	int16_t *pOutput;
 	int16_t *pState;
 	int16_t *pCoefficients;
+	uint16_t nb_channel;
 	uint32_t count;
 } LPF_executionState;
 
@@ -30,5 +38,5 @@ typedef struct
  void LPF_filterBiquad( LPF_executionState * pExecState );
  int LPF_filterInChunks( LPFType * pThis, int16_t * pInput, int16_t * pOutput, uint32_t length );
 #endif // LPF_H_
-	
+
 

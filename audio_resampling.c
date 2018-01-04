@@ -1,7 +1,7 @@
 #include <stdlib.h> // For malloc/free
 #include <string.h> // For memset
 #include <stdio.h>	// For test case I/O
-#include <time.h> 
+#include <time.h>
 
 #include "LPF.h"
 int8_t WAV_PCM_header[44] =
@@ -11,7 +11,7 @@ int8_t WAV_PCM_header[44] =
 	,0x02, 0x00, 0x10, 0x00, 0x64, 0x61, 0x74,0x61, 0x00,0x35, 0x0c, 0x00
 };
 
-int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
+int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length, uint8_t nb_channel)
 {
 	uint32_t samplesProcessed, i, j, frame_size;
 	int16_t *filtered_dat;
@@ -22,7 +22,10 @@ int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 
 	//lowpass filter
 	LPFType *filter = LPF_create(); // Create an instance of the filter
-	LPF_reset( filter );
+	LPF_reset( filter);
+
+	filter->nb_channel = nb_channel;
+
 	i = 0;
 	j = length;
 	while(j > 0) {
@@ -31,10 +34,10 @@ int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 		i += frame_size;
 		j -= frame_size;
 	}
-	
+
 	i = j= 0;
 	while(i < length) {
-		if((i%2) == 0) {
+		if((i & nb_channel) == 0) {
 				out_data[j] = filtered_dat[i];
 				j++;
 			}
@@ -46,7 +49,7 @@ int down_half_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 	return samplesProcessed;
 }
 
-int up_double_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
+int up_double_sample(int16_t *in_data, int16_t *out_data, uint32_t length, uint8_t nb_channel)
 {
 	int samplesProcessed;
 	int16_t *double_dat;
@@ -55,11 +58,11 @@ int up_double_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 	i = j = 0;
 	double_dat = malloc(2 * length * sizeof(int16_t));
 	while(i < 2 * length) {
-		if((i % 2) == 0) {
+		if((i & nb_channel) == 0) {
 			double_dat[i] = in_data[j];
 			j++;
 		}else
-			double_dat[i] = null_dat;
+			double_dat[i] = in_data[j];//null_dat;
 		i++;
 	}
 
@@ -67,6 +70,7 @@ int up_double_sample(int16_t *in_data, int16_t *out_data, uint32_t length)
 	int frame_size;
 	LPFType *filter = LPF_create(); // Create an instance of the filter
 	LPF_reset( filter );
+	filter->nb_channel = nb_channel;
 	i = 0;
 	j = length * 2;
 	while(j > 0) {
@@ -89,7 +93,7 @@ int main(int argc, char *argv[])
 	FILE *fd_in, *fd_out;
 	int16_t *samp_dat, *down_dat, *up_dat;
 	int samplesProcessed;
-	uint32_t audio_len = 44100 * 9;
+	uint32_t audio_len = 44100 * 20;
 	uint32_t i = 0;
 	char file[50];
 	sprintf(file,"%s",argv[1]);
@@ -118,7 +122,7 @@ int main(int argc, char *argv[])
 
 	//down sample process
 	down_dat = malloc(audio_len / 2 *sizeof(int16_t)); //prepare buffer for output
-	down_half_sample(samp_dat, down_dat, audio_len);
+	down_half_sample(samp_dat, down_dat, audio_len, 2);
 
 
 	//write down sample data to file
@@ -129,7 +133,7 @@ int main(int argc, char *argv[])
 		printf("file open fail!");
 		return 0;
 	}
-	i = 20; //drop the first 20 data avoid noise
+	i = 19; //drop the first 20 data avoid noise
 	while(i < audio_len / 2) {
 			fwrite(&down_dat[i], sizeof(int16_t), 1, fd_out);
 		i++;
@@ -137,7 +141,7 @@ int main(int argc, char *argv[])
 
 	//double up sample
 	up_dat = malloc(audio_len *sizeof(int16_t)); //prepare buffer for output
-	up_double_sample(down_dat, up_dat, audio_len/2);
+	up_double_sample(down_dat, up_dat, audio_len/2, 2);
 
 	//write up sample data to file
 	FILE *f_up;
@@ -149,7 +153,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	i = 0;
-	i = 20; //drop the first 20 data avoid noise
+	i = 19; //drop the first 20 data avoid noise
 	while(i < audio_len)
 	{
 		fwrite(&up_dat[i], sizeof(int16_t), 1, f_up);
