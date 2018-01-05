@@ -92,9 +92,9 @@ void LPF_destroy( LPFType *pObject )
 	 int16_t *pOutput = pExecState->pOutput;
 	 int32_t count = pExecState->count;
 	 int16_t accumulator;
- 	 int16_t i = 0;
- 	 int16_t ch_sel;
- 	 ch_sel = (pExecState->nb_channel == 2)? 1: 0;
+	 int16_t i = 0;
+	 int16_t ch_sel;
+	 ch_sel = (pExecState->nb_channel == 2)? 1: 0;
 	 // Loop for all samples in the input buffer
 	 while( count-- )
 	 {
@@ -130,58 +130,4 @@ void LPF_destroy( LPFType *pObject )
 	 *(pExecState->pState++) = w2[1];
 
  }
-//
-// void LPF_filterBiquad( LPF_executionState * pExecState )
-//{
-//	// Read state variables
-//	int32_t w0, x0;
-//	int32_t w1, w2;
-//	int32_t w1 = pExecState->pState[0];
-//	int32_t w2 = pExecState->pState[1];
-//
-//	// Read coefficients into work registers
-//	int16_t b0 = *(pExecState->pCoefficients++);
-//	int16_t b1 = *(pExecState->pCoefficients++);
-//	int16_t b2 = *(pExecState->pCoefficients++);
-//	int16_t a1 = *(pExecState->pCoefficients++);
-//	int16_t a2 = *(pExecState->pCoefficients++);
-//
-//	// Read source and target pointers
-//	int16_t *pInput  = pExecState->pInput;
-//	int16_t *pOutput = pExecState->pOutput;
-//	int32_t count = pExecState->count;
-//	int32_t accumulator;
-//
-//	// Loop for all samples in the input buffer
-//	while( count-- )
-//	{
-//
-//		// Read input sample
-//
-//		x0 = *(pInput++);
-//
-//		// Run feedback part of filter
-//		accumulator  = w2 * a2 >>15;
-//		accumulator += w1 * a1 >>15;
-//		accumulator += x0 ;
-//
-//		w0 = accumulator ;
-//
-//		// Run feedforward part of filter
-//		accumulator  = w0 * b0 >>15;
-//		accumulator += w1 * b1 >>15;
-//		accumulator += w2 * b2 >>15;
-//
-//		w2 = w1;		// Shuffle history buffer
-//		w1 = w0;
-//
-//		// Write output
-//		*(pOutput++) = accumulator ;
-//	}
-//
-//	// Write state variables
-//	*(pExecState->pState++) = w1;
-//	*(pExecState->pState++) = w2;
-//
-//}
 

@@ -1,4 +1,4 @@
-audio_filter: LPF_4rd.o
+audio_resampling: LPF_4rd.o
 	gcc audio_resampling.c -o audio_resampling LPF_4rd.o
 
 LPF_4rd.o:
