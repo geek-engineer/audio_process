@@ -3,12 +3,14 @@
 #include <stdint.h>
 static const int LPF_numStages = 2;
 static const int LPF_coefficientLength = 10;
-extern int16_t LPF_coefficients[10];
+extern float LPF_coefficients[20];
+#define Max_volume 50
 
 typedef struct
 {
-	int16_t state[20];
-	int8_t nb_channel;
+	int32_t state[20];
+	uint8_t nb_channel;
+	uint8_t bit_depth;
 	int16_t output;
 } LPFType;
 
@@ -20,11 +22,12 @@ typedef enum
 
 typedef struct
 {
-	int16_t *pInput;
-	int16_t *pOutput;
-	int16_t *pState;
+	int32_t *pInput;
+	int32_t *pOutput;
+	int32_t *pState;
 	int16_t *pCoefficients;
 	uint16_t nb_channel;
+	uint8_t coefficient_shift;
 	uint32_t count;
 } LPF_executionState;
 
@@ -34,9 +37,9 @@ typedef struct
  void LPF_init( LPFType * pThis );
  void LPF_reset( LPFType * pThis );
 
- uint32_t LPF_filterBlock( LPFType * pThis, int16_t * pInput, int16_t * pOutput, uint32_t count );
+ void LPF_volume(uint16_t volume, uint16_t bit_depth);
+ uint32_t LPF_filterBlock( LPFType * pThis, int32_t * pInput, int32_t * pOutput, uint32_t count );
  void LPF_filterBiquad( LPF_executionState * pExecState );
- int LPF_filterInChunks( LPFType * pThis, int16_t * pInput, int16_t * pOutput, uint32_t length );
 #endif // LPF_H_
 
 
