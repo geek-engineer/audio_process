@@ -1,7 +1,7 @@
 Audio_up_down_sampling README
 =============
 
-* This project is for audio up and down sampling
+* This project is for audio up and down sampling, now is for half-double and quarter-quadruple
 
 * The core code is generated from http://www.micromodeler.com/dsp/#
 
