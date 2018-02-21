@@ -4,11 +4,11 @@
 static const int LPF_numStages = 2;
 static const int LPF_coefficientLength = 10;
 extern float LPF_coefficients[20];
-#define Max_volume 50
+#define Max_volume 100
 
 typedef struct
 {
-	int32_t state[20];
+	int32_t state[100];
 	uint8_t nb_channel;
 	uint8_t bit_depth;
 	int16_t output;
