@@ -3,8 +3,10 @@
 #include <stdint.h>
 static const int LPF_numStages = 2;
 static const int LPF_coefficientLength = 10;
-extern float LPF_coefficients[20];
-#define Max_volume 100
+extern float LPF_coefficients[30];
+extern int16_t LPF_quarter_coefficients[30];
+
+#define Max_volume 1000
 
 typedef struct
 {
@@ -39,7 +41,10 @@ typedef struct
 
  void LPF_volume(uint16_t volume, uint16_t bit_depth);
  uint32_t LPF_filterBlock( LPFType * pThis, int32_t * pInput, int32_t * pOutput, uint32_t count );
- void LPF_filterBiquad( LPF_executionState * pExecState );
+ void LPF_filterBiquad0( LPF_executionState * pExecState );
+ void LPF_filterBiquad1( LPF_executionState * pExecState );
+ void LPF_filterBiquad2( LPF_executionState * pExecState );
+ void LPF_filterBiquad3( LPF_executionState * pExecState );
+ void LPF_filterBiquad4( LPF_executionState * pExecState );
 #endif // LPF_H_
-
 

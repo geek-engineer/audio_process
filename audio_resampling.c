@@ -15,10 +15,10 @@ int8_t WAV_PCM_header[44] =
 	0x10, 0x00, 0x00, 0x00, //SubChunk1Size  : 16 for pcm
 	0x01, 0x00,             //AudioFormat    : PCM = 1
 	0x01, 0x00,             //Num of channel : Mono = 1, Stereo = 2, etc
-	0x22, 0x56, 0x00, 0x00, //SampleRate     : 44100(default)
+	0x80, 0xbb, 0x00, 0x00, //SampleRate     : 48000(default)
 	0x88, 0x58, 0x01, 0x00, //ByteRate       : SampleRate * NumChannel * BitsPerSample/8
 	0x02, 0x00,             //BlockAlign     : NumChannel * BitsPerSample/8
-	0x10, 0x00,             //BitsPerSample  : 16 (default)
+	0x18, 0x00,             //BitsPerSample  : 16 (default)
 	0x64, 0x61, 0x74, 0x61, //SSubChunk2ID   : "data" in big endian
 	0x00, 0x35, 0x0c, 0x00, //SubChunk2Size
 };
@@ -95,7 +95,46 @@ int down_quarter_sample(int32_t *in_data, int32_t *out_data, audio_info info)
 			}
 		i++;
 	}
+    printf("down num sample:%d", info.NumSamples);
+	return 0;
+}
 
+
+
+int down_thr_sample(int32_t *in_data, int32_t *out_data, audio_info info)
+{
+	uint32_t i, j, frame_size;
+	int32_t *filtered_dat;
+	frame_size = 1024;
+
+    //allocate buffer for filtered data
+    filtered_dat = malloc(info.NumSamples* info.nb_channel * sizeof(int32_t));
+
+    //lowpass filter
+    LPFType *filter = LPF_create(); // Create an instance of the filter
+    LPF_reset( filter);
+
+    filter->nb_channel = info.nb_channel;
+    filter->bit_depth = info.bit_depth;
+
+	i = 0;
+	j = info.NumSamples;
+	while(j > 0) {
+		if(frame_size > j) frame_size = j;
+		LPF_filterBlock( filter, in_data + i, filtered_dat + i, frame_size);
+		i += frame_size;
+		j -= frame_size;
+	}
+
+	i = j= 0;
+	while(i < info.NumSamples) {
+		if((i % 3) == 0) {
+				out_data[j] = filtered_dat[i];
+				j++;
+			}
+		i++;
+	}
+    printf("down num sample:%d", info.NumSamples);
 	return 0;
 }
 
@@ -175,6 +214,43 @@ int up_quadruple_sample(int32_t *in_data, int32_t *out_data, audio_info info)
 
 }
 
+
+int up_thr_sample(int32_t *in_data, int32_t *out_data, audio_info info)
+{
+    int i, j;
+    int frame_size;
+    int32_t *quadruple_dat;
+    i = j = 0;
+    
+	quadruple_dat = malloc(3 * info.NumSamples * info.nb_channel * sizeof(int32_t));
+    while(i < 3 * info.NumSamples) {
+        if((i % 3 ) == 0) {
+            quadruple_dat[i] = in_data[j];
+            j++;
+        }else
+            quadruple_dat[i] = quadruple_dat[i - 1];
+        i++;
+    }
+    frame_size = 1024;
+    //lowpass filter
+	LPFType *filter = LPF_create(); // Create an instance of the filter
+	LPF_reset( filter);
+    filter->nb_channel = info.nb_channel;
+    filter->bit_depth = info.bit_depth;
+
+    i = 0;
+    j = info.NumSamples * 3;
+    while(j > 0) {
+        if(frame_size > j) frame_size = j;
+        LPF_filterBlock( filter, quadruple_dat + i, out_data + i, frame_size);
+        i += frame_size;
+        j -= frame_size;
+    }
+
+    return 0;
+
+}
+
 void get_audio_header(FILE *fd_in, audio_info *audio)
 {
     //initialize audio info
@@ -183,10 +259,11 @@ void get_audio_header(FILE *fd_in, audio_info *audio)
 //  printf("chunkSize:%x %x %x %x", WAV_PCM_header[4],WAV_PCM_header[5],WAV_PCM_header[6],WAV_PCM_header[7]);
     fseek(fd_in, 22, SEEK_SET); //NumChannel
     fread(&audio->nb_channel, 2, 1, fd_in);
+    fseek(fd_in, 24, SEEK_SET);
     fread(&audio->sample_rate, 4, 1, fd_in);
     fseek(fd_in, 34, SEEK_SET); //BitPerSample
     fread(&audio->bit_depth, 2, 1, fd_in);
-    fseek(fd_in, 42, SEEK_SET); //num of data byte
+    fseek(fd_in, 40, SEEK_SET); //num of data byte
     fread(&audio->NumData, 4, 1, fd_in);
     printf("audio.nb_channel:%d\n audio.sample_rate:%d\n audio.bit_depth:%d\n audio.NumData:%d\n", audio->nb_channel, audio->sample_rate, audio->bit_depth, audio->NumData);
     audio->NumSamples = (audio->NumData / audio->nb_channel) / (audio->bit_depth / 8);
@@ -274,7 +351,7 @@ int up_down_sample_half(int argc, char *argv[])
 
 
 	//double up sample
-	LPF_volume(48, audio.bit_depth);
+	LPF_volume(100, audio.bit_depth);
 	up_dat = malloc((audio.NumSamples * audio.nb_channel) * sizeof(int32_t)); //prepare buffer for output
 	audio.NumSamples = audio.NumSamples / 2;
 	up_double_sample(down_dat, up_dat, audio);
@@ -296,6 +373,7 @@ int up_down_sample_half(int argc, char *argv[])
     memcpy(&WAV_PCM_header[4], &ChunkSize, 4);
     SampleRate = 44100;
     memcpy(&WAV_PCM_header[24], &SampleRate, 4);
+    memcpy(&WAV_PCM_header[34], &audio.bit_depth, 2);
     i = 0;
     for(i = 0; i < 44; i++) {
         fwrite(&WAV_PCM_header[i], sizeof(int8_t), 1, f_up);
@@ -340,7 +418,7 @@ int up_down_sample_quarter(int argc, char *argv[])
     get_audio_header(fd_in, &audio);
 
     //init filter coefficient
-//    LPF_volume(60, audio.bit_depth);
+    LPF_volume(995, audio.bit_depth);
 
     //read audio data
     samp_dat = malloc(audio.NumSamples * audio.nb_channel * sizeof(int32_t));
@@ -351,15 +429,14 @@ int up_down_sample_quarter(int argc, char *argv[])
 
 	down_quarter_sample(samp_dat, down_dat, audio);
 
-
 	//write down sample data to file
-//	char file_out[50];
-//	sprintf(file_out,"down_%s",file);
-//	fd_out = fopen(file_out, "w");
-//	if(!fd_out) {
-//		printf("file open fail!");
-//		return 0;
-//	}
+	char file_out[50];
+	sprintf(file_out,"down_%s",file);
+	fd_out = fopen(file_out, "w");
+	if(!fd_out) {
+		printf("file open fail!");
+		return 0;
+	}
 
     //wav pcm header
     uint32_t ChunkSize, SampleRate, NumDataByte;
@@ -368,18 +445,18 @@ int up_down_sample_quarter(int argc, char *argv[])
     ChunkSize = 36 + NumDataByte;
     memcpy(&WAV_PCM_header[4], &ChunkSize, 4);
     memcpy(&WAV_PCM_header[22], &audio.nb_channel, 2);
-    SampleRate = 44100 / 4;
+    SampleRate = 48000 / 4;
     memcpy(&WAV_PCM_header[24], &SampleRate, 4);
     i = 0;
-//    for(i = 0; i < 44; i++) {
-//        fwrite(&WAV_PCM_header[i], sizeof(int8_t), 1, fd_out);
-//    }
-//
-//	i = 0;
-//	while(i < audio.NumSamples * audio.nb_channel) {
-//		fwrite(&down_dat[i], audio.bit_depth / 8, 1, fd_out);
-//		i++;
-//	}
+    for(i = 0; i < 44; i++) {
+        fwrite(&WAV_PCM_header[i], sizeof(int8_t), 1, fd_out);
+    }
+
+	i = 0;
+	while(i < audio.NumSamples * audio.nb_channel / 4) {
+		fwrite(&down_dat[i], audio.bit_depth / 8, 1, fd_out);
+		i++;
+	}
 	
 	//double up sample
 //	LPF_volume(100, audio.bit_depth);
@@ -403,7 +480,7 @@ int up_down_sample_quarter(int argc, char *argv[])
     memcpy(&WAV_PCM_header[40], &NumDataByte, 4);
     ChunkSize = 36 + NumDataByte;
     memcpy(&WAV_PCM_header[4], &ChunkSize, 4);
-    SampleRate = 44100;
+    SampleRate = 48000;
     memcpy(&WAV_PCM_header[24], &SampleRate, 4);
     i = 0;
     for(i = 0; i < 44; i++) {
@@ -418,12 +495,14 @@ int up_down_sample_quarter(int argc, char *argv[])
 	}
 
 	fclose(fd_in);
-//	fclose(fd_out);
+	fclose(fd_out);
 	fclose(f_up);
 	free(samp_dat);
 	free(down_dat);
 	free(up_dat);
+
 	return 0;
+	
 }
 
 int up_down_drop_half(int argc, char *argv[])
@@ -656,10 +735,122 @@ int up_down_drop_quater(int argc, char *argv[])
 	return 0;
 }
 
+
+
+int up_down_sample_thr(int argc, char *argv[])
+{
+	FILE *fd_in, *fd_out;
+	int32_t *samp_dat, *down_dat, *up_dat;
+	uint32_t i = 0;
+	char file[50];
+    audio_info audio;
+	if(!argv[1])
+	    printf("no input! \n");
+	sprintf(file,"%s",argv[1]);
+
+	fd_in = fopen(file, "r");
+	if(!fd_in) {
+		printf("file open fail! \n");
+		return 0;
+	}
+
+
+    //init audio info
+    get_audio_header(fd_in, &audio);
+
+    //init filter coefficient
+    LPF_volume(50, audio.bit_depth);
+
+    //read audio data
+    samp_dat = malloc(audio.NumSamples * audio.nb_channel * sizeof(int32_t));
+    get_audio_chunk(fd_in, &audio, samp_dat);
+
+	//down sample process
+	down_dat = malloc(audio.NumSamples * audio.nb_channel * sizeof(int32_t) / 3); //prepare buffer for output
+	down_thr_sample(samp_dat, down_dat, audio);
+
+	//write down sample data to file
+	char file_out[55];
+	sprintf(file_out,"down_%s",file);
+	fd_out = fopen(file_out, "w");
+	if(!fd_out) {
+		printf("file open fail!");
+		return 0;
+	}
+
+    //wav pcm header
+    uint32_t ChunkSize, SampleRate, NumDataByte;
+    NumDataByte = audio.NumData / 3;
+    memcpy(&WAV_PCM_header[40], &NumDataByte, 4);
+    ChunkSize = 36 + NumDataByte;
+    memcpy(&WAV_PCM_header[4], &ChunkSize, 4);
+    memcpy(&WAV_PCM_header[22], &audio.nb_channel, 2);
+    SampleRate = 48000 / 3;
+    memcpy(&WAV_PCM_header[24], &SampleRate, 4);
+    i = 0;
+    for(i = 0; i < 44; i++) {
+        fwrite(&WAV_PCM_header[i], sizeof(int8_t), 1, fd_out);
+    }
+
+	i = 0;
+	while(i < audio.NumSamples * audio.nb_channel / 3) {
+		fwrite(&down_dat[i], audio.bit_depth / 8, 1, fd_out);
+		i++;
+	}
+	
+	//double up sample
+	LPF_volume(50, audio.bit_depth);
+	up_dat = malloc((audio.NumSamples * audio.nb_channel) * sizeof(int32_t)); //prepare buffer for output
+
+	audio.NumSamples = audio.NumSamples / 3;
+	up_thr_sample(down_dat, up_dat, audio);
+
+    //write up sample data to file
+    FILE *f_up;
+    char file_up_out[50];
+    sprintf(file_up_out,"up_%s",file);
+    f_up = fopen(file_up_out, "w");
+    if(!f_up) {
+        printf("file open fail!");
+        return 0;
+    }
+
+    //wav pcm header
+    NumDataByte = audio.NumData;
+    memcpy(&WAV_PCM_header[40], &NumDataByte, 4);
+    ChunkSize = 36 + NumDataByte;
+    memcpy(&WAV_PCM_header[4], &ChunkSize, 4);
+    SampleRate = 48000;
+    memcpy(&WAV_PCM_header[24], &SampleRate, 4);
+    i = 0;
+    for(i = 0; i < 44; i++) {
+        fwrite(&WAV_PCM_header[i], sizeof(int8_t), 1, f_up);
+    }
+
+    i = 0;
+	while(i < audio.NumSamples * audio.nb_channel * 3)
+	{
+		fwrite(&up_dat[i], audio.bit_depth / 8, 1, f_up);
+		i++;
+	}
+
+	fclose(fd_in);
+	fclose(fd_out);
+	fclose(f_up);
+	free(samp_dat);
+	free(down_dat);
+	free(up_dat);
+/*
+*/
+	return 0;
+	
+}
+
 int main(int argc, char *argv[])
 {
 //    up_down_sample_half(argc, argv);
     up_down_sample_quarter(argc, argv);
+//    up_down_sample_thr(argc, argv);
 //    up_down_drop_half(argc, argv);
 //    up_down_drop_quater(argc, argv);
     return 0;
