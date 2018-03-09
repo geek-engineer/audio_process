@@ -184,7 +184,7 @@ int up_quadruple_sample(int32_t *in_data, int32_t *out_data, audio_info info)
     int frame_size;
     int32_t *quadruple_dat;
     i = j = 0;
-    
+
 	quadruple_dat = malloc(4 * info.NumSamples * info.nb_channel * sizeof(int32_t));
     while(i < 4 * info.NumSamples) {
         if((i % 4 ) == 0) {
@@ -221,7 +221,7 @@ int up_thr_sample(int32_t *in_data, int32_t *out_data, audio_info info)
     int frame_size;
     int32_t *quadruple_dat;
     i = j = 0;
-    
+
 	quadruple_dat = malloc(3 * info.NumSamples * info.nb_channel * sizeof(int32_t));
     while(i < 3 * info.NumSamples) {
         if((i % 3 ) == 0) {
@@ -457,7 +457,7 @@ int up_down_sample_quarter(int argc, char *argv[])
 		fwrite(&down_dat[i], audio.bit_depth / 8, 1, fd_out);
 		i++;
 	}
-	
+
 	//double up sample
 //	LPF_volume(100, audio.bit_depth);
 	up_dat = malloc((audio.NumSamples * audio.nb_channel) * sizeof(int32_t)); //prepare buffer for output
@@ -502,7 +502,7 @@ int up_down_sample_quarter(int argc, char *argv[])
 	free(up_dat);
 
 	return 0;
-	
+
 }
 
 int up_down_drop_half(int argc, char *argv[])
@@ -797,7 +797,7 @@ int up_down_sample_thr(int argc, char *argv[])
 		fwrite(&down_dat[i], audio.bit_depth / 8, 1, fd_out);
 		i++;
 	}
-	
+
 	//double up sample
 	LPF_volume(50, audio.bit_depth);
 	up_dat = malloc((audio.NumSamples * audio.nb_channel) * sizeof(int32_t)); //prepare buffer for output
@@ -840,19 +840,78 @@ int up_down_sample_thr(int argc, char *argv[])
 	free(samp_dat);
 	free(down_dat);
 	free(up_dat);
-/*
-*/
+
 	return 0;
-	
+
+}
+
+int parse_arg(int argc, char *argv[])
+{
+    int i, rtn;
+    
+    if(!strcmp(argv[1], "-help")) {
+    	printf(
+    		"\n Argument must be one of follow:"
+			"\n HALF_F 	: up_down sample half with filter"
+			"\n THIRD_F 	: up_down sample one third with filter"
+			"\n QUARD_F 	: up_down sample one forth with filter"
+			"\n HALF_D 	: up_down sample half with drop dot"
+			"\n QUARD_D 	: up_down sample one forth with drop dot"
+			"\n\n ex: audio_resampling.exe filename.wav QUARD_F"
+			"\n"
+		);
+		rtn = HELP;
+		goto exit;
+    };
+    i = 0;
+    while(strcmp(WAVPROCARG[i].procType, "MAX")){
+//        printf("%s", WAVPROCARG[i].procType);
+        if (!strcmp(WAVPROCARG[i].procType, argv[2])) {
+            rtn = WAVPROCARG[i].procCmd;
+            goto exit;
+        }
+        i++;
+    }
+
+exit:
+    return rtn;
 }
 
 int main(int argc, char *argv[])
 {
-//    up_down_sample_half(argc, argv);
-    up_down_sample_quarter(argc, argv);
-//    up_down_sample_thr(argc, argv);
-//    up_down_drop_half(argc, argv);
-//    up_down_drop_quater(argc, argv);
+    int procCmd= 0;
+    if(argc <= 1)
+     goto help;
+    procCmd =  parse_arg(argc, argv);
+//    printf("procCmd: %d", procCmd);
+
+    switch(procCmd) {
+        case HALF_F:
+            up_down_sample_half(argc, argv);
+            break;
+        case THIRD_F:
+            up_down_sample_thr(argc, argv);
+            break;
+        case QUARD_F:
+            up_down_sample_quarter(argc, argv);
+            break;
+        case HALF_D:
+            up_down_drop_half(argc, argv);
+            break;
+        case THIRD_D:
+
+            break;
+        case QUARD_D:
+            up_down_drop_quater(argc, argv);
+            break;
+    	case MAX:
+    		printf(" Arg[2] not acceptable!!");
+    		break;
+        help:
+            printf("use \"-help\" for information");
+            break;
+    }
+
     return 0;
 }
 

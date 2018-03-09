@@ -1,5 +1,32 @@
 #ifndef AUDIO_RESAMPLING_ // Include guards
 #define AUDIO_RESAMPLING_
+typedef struct
+{
+	char        procType[20];
+	uint16_t     procCmd;
+}ProcArg;
+
+typedef enum {
+    HELP,
+    HALF_F,
+    THIRD_F,
+    QUARD_F,
+    HALF_D,
+    THIRD_D,
+    QUARD_D,
+    MAX,
+} argcmd;
+
+ProcArg WAVPROCARG[] =
+{
+    {"HALF_F"  , HALF_F     },
+    {"THIRD_F" , THIRD_F    },
+    {"QUARD_F" , QUARD_F    },
+    {"HALF_D"  , HALF_D     },
+    {"THIRD_D" , THIRD_D    },
+    {"QUARD_D" , QUARD_D    },
+    {"MAX"     , MAX       },
+};
 
 typedef struct
 {
