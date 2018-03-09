@@ -24,10 +24,10 @@ To run the executable file just type
 
 ## Batch build
  Run build.bat
- it will make program, and copy audio_resample.exe to sine_tone folder
+ ,it will make program, and copy audio_resample.exe to sine_tone folder
 
 ## Test
  Open sine_tone folder and unzip sine_tone.rar
  make sure audio_resample.exe exist under current dir
- run up_down.bat, it will proceed all wav file defined
- you can use wavepad software to check the FFT
+ ,run up_down.bat, it will proceed all wav file defined
+ ,you can use wavepad software to check the FFT
