@@ -16,7 +16,7 @@ To compile the prject just type:
 
 To run the executable file just type 
 	
-	shell: ./audio_filter.exe "target_file_name"
+    shell: ./audio_filter.exe "target_file_name"
     
 ## Clean
 

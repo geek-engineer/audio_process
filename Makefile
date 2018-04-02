@@ -1,8 +1,14 @@
-audio_resampling: LPF_4rd.o
-	gcc audio_resampling.c -o audio_resampling LPF_4rd.o
+all: tool.o audio_resampling.o LPF.o
+	gcc main.c tool.o audio_resampling.o LPF.o -o audio_pro.exe
 
-LPF_4rd.o:
-	gcc -c LPF_4rd.c
+tool.o:
+	gcc -c tool.c
+
+audio_resampling.o:
+	gcc -c audio_resampling.c
+
+LPF.o:
+	gcc -c LPF.c
 
 # program:
 # 	gcc audio_filter.c -o audio_filter LPF_4rd.o
