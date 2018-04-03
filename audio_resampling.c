@@ -16,8 +16,8 @@ int resample_init(void)
     //initiate lowpass filter
     LPF_reset( &filter);
 
-    filter.nb_channel = wavFmt.NumChannel;
-    filter.bit_depth = wavFmt.BitPerSample;
+     filter.nb_channel = wavFmt.NumChannel;
+     filter.bit_depth = wavFmt.BitPerSample;
      LPF_volume(1000, 24);
      return 0;
 }
@@ -82,10 +82,12 @@ int up_down_sample(char *filename, uint16_t prcType)
     fseek(fd_in, 28 + wavFmt.SubChunk1Size, SEEK_SET);
 
     /*---write audio header---*/
-//    wavFmt.ChunkSize = 44 + (wavFmt.SubChunk2Size / 4);
-//    wavFmt.SampleRate = 12000;
-//    wavFmt.SubChunk2Size = (wavFmt.SubChunk2Size / 4);
-    write_audio_header(fd_out);
+    wav_format downWavFmt;
+    memcpy(&downWavFmt, &wavFmt, 44);
+    downWavFmt.ChunkSize = 44 + (wavFmt.SubChunk2Size / 4);
+    downWavFmt.SampleRate = 12000;
+    downWavFmt.SubChunk2Size = (wavFmt.SubChunk2Size / 4);
+    write_audio_header(fd_out, downWavFmt);
 
     /*------audio process------*/
     uint32_t cnt = wavFmt.SubChunk2Size;

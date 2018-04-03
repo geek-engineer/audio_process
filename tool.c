@@ -87,10 +87,10 @@ exit:
     fclose(fd_in);
 }
 
-void write_audio_header(FILE *fd_out)
+void write_audio_header(FILE *fd_out, wav_format fmt)
 {
-    wavFmt.SubChunk1Size = 16;
-    fwrite(&wavFmt, 44, 1, fd_out);
+    fmt.SubChunk1Size = 16;
+    fwrite(&fmt, 44, 1, fd_out);
 }
 
 void get_audio_chunk(FILE *Fpt, uint8_t *buf, uint32_t numByte)
