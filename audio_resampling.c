@@ -8,10 +8,64 @@
 #include "audio_resampling.h"
 #include "LPF.h"
 
-int down_sample_quarter(uint8_t *Data_i, uint8_t *Data_o, uint32_t numByteIn)
+int resample_init(void)
 {
 
-    return 0;
+    printf("resample_init \r\n");
+
+    //initiate lowpass filter
+    LPF_reset( &filter);
+
+    filter.nb_channel = wavFmt.NumChannel;
+    filter.bit_depth = wavFmt.BitPerSample;
+     LPF_volume(1000, 24);
+     return 0;
+}
+
+int down_sample_quarter(uint8_t *Data_i, uint8_t *Data_o, uint32_t numByteIn)
+{
+    uint32_t i, j, frame_size;
+
+    /*----allocate buffer for 32bit dat----*/
+    uint32_t numSamp = readByte / (wavFmt.BitPerSample / 8);
+    int32_t *dat32 = malloc(numSamp * sizeof(int32_t));
+
+    /*----transfer Data_i to 32bit dat----*/
+    i = 0;
+    while(i < numSamp) {
+        memcpy(&dat32[i], &Data_i[i * 3], (wavFmt.BitPerSample / 8));
+        if(wavFmt.BitPerSample == 24) {
+            dat32[i] = (dat32[i] & 0x800000)?(dat32[i] | 0xFF000000) : (dat32[i] & 0xFFFFFF);
+        } else {
+            dat32[i] = (dat32[i] & 0x8000)?(dat32[i] | 0xFFFF0000) : (dat32[i] & 0xFFFF);
+        }
+        i++;
+    }
+
+    /*----allocate buffer for filtered data----*/
+    int32_t *filtered_dat = malloc(numSamp * sizeof(int32_t));
+    frame_size = 1024;
+
+	i = 0;
+	j = numSamp;
+	filter.nb_channel = 1;
+	filter.bit_depth = 24;
+
+	while(j > 0) {
+		if(frame_size > j) frame_size = j;
+		LPF_filterBlock( &filter, dat32 + i, filtered_dat + i, frame_size);
+		i += frame_size;
+		j -= frame_size;
+	}
+
+	i = 0;
+	while(i < numSamp / 4) {
+	    memcpy(&Data_o[i * 3], &filtered_dat[i * 4], 3);
+        i++;
+	}
+    free(filtered_dat);
+    free(dat32);
+    return numByteIn / 4;
 }
 
 int (*resample_process[])(uint8_t *Data_i, uint8_t *Data_o, uint32_t numByteIn) = {down_sample_quarter,};
@@ -24,23 +78,29 @@ int up_down_sample(char *filename, uint16_t prcType)
 
     /*------open file------*/
     fd_in = fopen(filename, "rb");
-    fd_out = fopen(dw_fil, "ab+");
+    fd_out = fopen(dw_fil, "wb+");
     fseek(fd_in, 28 + wavFmt.SubChunk1Size, SEEK_SET);
 
     /*---write audio header---*/
+//    wavFmt.ChunkSize = 44 + (wavFmt.SubChunk2Size / 4);
+//    wavFmt.SampleRate = 12000;
+//    wavFmt.SubChunk2Size = (wavFmt.SubChunk2Size / 4);
     write_audio_header(fd_out);
 
     /*------audio process------*/
     uint32_t cnt = wavFmt.SubChunk2Size;
     uint32_t readCnt = readByte;
     uint32_t writeCnt;
+
+    resample_init(); 
+
     while(cnt > 0) {
         if(cnt < readCnt) { readCnt = cnt; }
         fread(audData, readCnt, 1, fd_in);
         
         /*----Up Down process----*/
         writeCnt = resample_process[0](audData, proData, readCnt);
-
+        filter.step = 0;
         fwrite(proData, writeCnt, 1, fd_out);
         cnt -= readCnt;
     }

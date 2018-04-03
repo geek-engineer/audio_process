@@ -1,6 +1,9 @@
 #ifndef AUDIO_RESAMPLING_ // Include guards
 #define AUDIO_RESAMPLING_
 #include "stdint.h"
+#include "LPF.h"
+LPFType filter;
+
 //typedef struct
 //{
 //	char        procType[20];

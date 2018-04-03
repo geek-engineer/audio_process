@@ -2,7 +2,7 @@
 #define _INCLUDE_H_
 #include <stdint.h>
 
-#define readByte 600
+#define readByte 2880
 uint8_t audData[readByte];
 uint8_t proData[readByte];
 
