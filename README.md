@@ -10,21 +10,17 @@ Audio_up_down_sampling README
 ## Compile
 To compile the prject just type:
 
-	shell: make
+	shell: make all
 
 ## Run
 
 To run the executable file just type 
 	
-    shell: ./audio_filter.exe "target_file_name"
+    shell: ./audio_pro.exe file.wav
     
 ## Clean
 
 	shell: make clean
-
-## Batch build
- Run build.bat
- ,it will make program, and copy audio_resample.exe to sine_tone folder
 
 ## Test
  Open sine_tone folder and unzip sine_tone.rar
